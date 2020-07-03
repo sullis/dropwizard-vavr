@@ -1,5 +1,6 @@
 package io.dropwizard.vavr;
 
+import com.google.common.io.Resources;
 import io.dropwizard.Bundle;
 import io.dropwizard.jersey.validation.Validators;
 import io.dropwizard.setup.Bootstrap;
@@ -15,6 +16,10 @@ import io.vavr.jackson.datatype.VavrModule;
 import org.hibernate.validator.HibernateValidatorConfiguration;
 
 import javax.validation.ValidatorFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.net.URL;
 
 public class VavrBundle implements Bundle {
     private final VavrModule.Settings settings;
@@ -92,7 +97,16 @@ public class VavrBundle implements Bundle {
      * org.hibernate.validator.spi.valuehandling.ValidatedValueUnwrapper} registered.
      */
     private static HibernateValidatorConfiguration newValidatorConfiguration() {
+        final InputStream vavrConstraints;
+        try {
+            final URL resource = Resources.getResource("constraints-vavr.xml");
+            vavrConstraints = resource.openStream();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
         return Validators.newConfiguration()
-                .addValidatedValueHandler(new ValueValidatedValueUnwrapper());
+                .addValidatedValueHandler(new ValueValidatedValueUnwrapper())
+                .addMapping(vavrConstraints);
     }
 }
